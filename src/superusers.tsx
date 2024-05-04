@@ -11,7 +11,9 @@ enum superUserPowerSettingName {
     SkipApprovedPosts = "SkipApprovedPosts",
     EnhancedLogging = "enhancedLogging"
 }
- 
+
+const DEFAULT_BOTS = ['AutoModerator']
+
 
 export const settingsforSuperUserPowers: SettingsFormField = {
 
@@ -89,7 +91,7 @@ export async function checkSuperUserPowersEvents (event: CommentSubmit, context:
     const comment   = await context.reddit.getCommentById(event.comment.id);  
     
     // Ignore any comments by AutoModerator, to not clog up the logs
-    const usernamesToIgnore = ['AutoModerator']
+    const usernamesToIgnore = DEFAULT_BOTS
     if (usernamesToIgnore.includes(comment.authorName) || event.author.id == context.appAccountId ){
         return
     }
@@ -265,16 +267,23 @@ export async function checkSuperUserPowersEvents (event: CommentSubmit, context:
         const commentsOnPost = await post.comments.all();
         const existingSticky = commentsOnPost.find(comment => comment.isStickied());
 
-        if (!existingSticky) {
-            const newComment = await context.reddit.submitComment({id: post.id, text: decodeURI(postRemovedComment)});
+        // Remove any existing sticky
+        if (existingSticky) {
+            //existingSticky.undistinguish();
+            const unstickyPostsFrom = DEFAULT_BOTS;
+            if (unstickyPostsFrom.includes(comment.authorName) || event.author.id == context.appAccountId ){
+                existingSticky.remove();
+            };
+        };
 
+        const newComment = await context.reddit.submitComment({id: post.id, text: decodeURI(postRemovedComment)});
         await Promise.all([
             newComment.distinguish(true),
             newComment.lock(),
         ]);
 
         console.log(`Removal comment stickied.`);
-    }}
+    }
 
-    console.log(`Post ${post.id} removed by ${username}.`)
+    console.log(`Post ${post.id} removed by ${username}.`);
 }
