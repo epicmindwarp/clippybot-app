@@ -259,16 +259,22 @@ export async function checkSuperUserPowersEvents (event: CommentSubmit, context:
         });
     }
 
-    // If a 
     if (postRemovedComment) {
-        const newComment = await context.reddit.submitComment({id: post.id, text: decodeURI(postRemovedComment)});
+
+        // Remove any existing sticky
+        const commentsOnPost = await post.comments.all();
+        const existingSticky = commentsOnPost.find(comment => comment.isStickied());
+
+        if (!existingSticky) {
+            const newComment = await context.reddit.submitComment({id: post.id, text: decodeURI(postRemovedComment)});
+
         await Promise.all([
-            newComment.distinguish(),
+            newComment.distinguish(true),
             newComment.lock(),
         ]);
 
-        console.log(`Removal comment added.`);
-    }
+        console.log(`Removal comment stickied.`);
+    }}
 
     console.log(`Post ${post.id} removed by ${username}.`)
 }
