@@ -102,7 +102,7 @@ export async function checkSuperUserPowersEvents (event: CommentSubmit, context:
 
     const settings      = await context.settings.getAll();
 
-    // If theA entire function is disabled, do nothing
+    // If the entire function is disabled, do nothing
     const superUserPostRemovalEnabled = settings[superUserPowerSettingName.EnableSuperUserPostRemoval] as boolean;
     if (!superUserPostRemovalEnabled) {
         await enhancedLog(context, `superUserPostRemovalEnabled not enabled.\n`);
@@ -113,6 +113,12 @@ export async function checkSuperUserPowersEvents (event: CommentSubmit, context:
     const superUserPostRemovalCommentPrefix = settings[superUserPowerSettingName.SuperUserPostRemovalCommentPrefix] as string;
     if (comment.body.toLowerCase().startsWith(superUserPostRemovalCommentPrefix)) {
         console.log(`${comment.id} Found super user comment with post removal trigger.`);
+
+        // Remove the trigger comment after it's been triggered
+        if (!comment.isRemoved()) {
+            await enhancedLog(context, `Trigger comment removed.`);
+            comment.remove()
+        }
     }
     else {
             await enhancedLog(context, `${comment.id} triggered - no prefix.\n`)
@@ -123,7 +129,11 @@ export async function checkSuperUserPowersEvents (event: CommentSubmit, context:
     const skipApprovedPosts = settings[superUserPowerSettingName.SkipApprovedPosts] as boolean;
     if (skipApprovedPosts) {
         if (post.isApproved()) {
-            console.log(`### Flagged by ${username} already mod approved - skipping...\n`)
+            console.log(`### Post already mod approved - skipping...\n`)
+            await context.reddit.sendPrivateMessage({
+                subject: `Post removal failed on ${subredditName}!`,
+                text: `The [post you tried to remove](${comment.permalink}) was already approved by a moderator.`,
+                to: username});
             return
         }
     }
