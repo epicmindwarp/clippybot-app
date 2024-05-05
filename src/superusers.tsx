@@ -267,18 +267,19 @@ export async function checkSuperUserPowersEvents (event: CommentSubmit, context:
         const commentsOnPost = await post.comments.all();
         const existingSticky = commentsOnPost.find(comment => comment.isStickied());
 
-        // Remove any existing sticky
+        // Remove any existing sticky if by a bot 
         if (existingSticky) {
-            //existingSticky.undistinguish();
+
             const unstickyPostsFrom = DEFAULT_BOTS;
-            if (unstickyPostsFrom.includes(comment.authorName) || event.author.id == context.appAccountId ){
+            if (unstickyPostsFrom.includes(existingSticky.authorName) || existingSticky.authorId == context.appAccountId ){
                 existingSticky.remove();
             };
         };
 
+        // Place removal comment
         const newComment = await context.reddit.submitComment({id: post.id, text: decodeURI(postRemovedComment)});
         await Promise.all([
-            newComment.distinguish(true),
+            newComment.distinguish(true),   // Distinguish and sticky
             newComment.lock(),
         ]);
 
