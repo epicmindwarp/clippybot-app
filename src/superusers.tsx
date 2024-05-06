@@ -114,7 +114,7 @@ export async function checkSuperUserPowersEvents (event: CommentSubmit, context:
     // Check if the comment contains the trigger prefix
     const superUserPostRemovalCommentPrefix = settings[superUserPowerSettingName.SuperUserPostRemovalCommentPrefix] as string;
     if (comment.body.toLowerCase().startsWith(superUserPostRemovalCommentPrefix)) {
-        console.log(`${comment.id} Found super user comment with post removal trigger.`);
+        console.log(`\n\n### ${comment.id} Comment by ${username} with ${superUserPostRemovalCommentPrefix} comment!`);
 
         // Remove the trigger comment after it's been triggered
         if (!comment.isRemoved()) {
@@ -182,7 +182,7 @@ export async function checkSuperUserPowersEvents (event: CommentSubmit, context:
     await enhancedLog(context, `triggerInComment ${triggerInComment}`)
 
     // Extract the removal rule by removing the prefix
-    const removalRuleNumber = triggerInComment.replace(superUserPostRemovalCommentPrefix, '') as string; // Ignore anything after a space, if provided
+    const removalRuleNumber = triggerInComment.toLowerCase().replace(superUserPostRemovalCommentPrefix.toLowerCase(), '') as string; // Ignore anything after a space, if provided
 
     // The prefix of the rule saved in Toolbox - might be different
     const superUserPostRemovalToolboxRulePrefix = settings[superUserPowerSettingName.SuperUserPostRemovalToolboxRulePrefix] as string;
@@ -204,7 +204,7 @@ export async function checkSuperUserPowersEvents (event: CommentSubmit, context:
     if (removalReasonIndex !== -1) {
         await enhancedLog(context, `Found reason index: ${removalReasonIndex}`);
     } else {
-        console.log(`Abort - reason '${triggerInComment}' not found.\n`);
+        console.log(`### Abort - reason '${triggerInComment}' not found.\n`);
         return
     }
 
